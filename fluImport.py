@@ -72,7 +72,7 @@ class FluCard:
         os.chdir(homedir)
 
         if not os.path.isfile(FLUBASE_FILE):
-            self.new_flubase_file()
+            flubase = self.new_flubase_file()
         else:
             with open (FLUBASE_FILE) as datafile:
                 flubase = json.load(datafile)
@@ -108,6 +108,7 @@ class FluCard:
         with open(FLUBASE_FILE, 'w') as outfile:
             json.dump(flubase, outfile)
 
+        return flubase
 
     def get_dest_dir_photo_list(self):
         '''
