@@ -17,20 +17,20 @@ We will also assume all images are named in a monotonically increasing fashion.
 i.e. the last imported will have the highest numbered filename.
 Special case when 9999 rolls over to 0000.
 
+You must choose a Dest Dir (-d flag) on first use.  After that, the same folder will be usedwithout needing to specify thelocation.
+
 Database will retain:
 - initialization date in seconds
 - "first" imported file
 - "last" imported file
 - rollover flag
-This database file is crested in:  '/Library/Preferences/com.PsychoticPsoftware.FluImport.json'
+- Destination AutoImport Dir
+This database file is created in:  '/Library/Preferences/com.PsychoticPsoftware.FluImport.json'
+See FLUBASE_DIR and FLUBASE_FILE to change specific to your OS requirements.
 
 Filenames are assumed to be four characters followed by four numbers. e.g. "ABCD1234.jpg".
 This program makes no assumption with regards to files being of type JPG or RAW format.
 Whatever is saved to the FluCard will be captured.
-
-The file will be automatically reset two days after the init date.
-(two days to eliminate problem over midnight usdage).
-
 
 The program will reset the database file on startup if it has been more than two days since the last
 file download occurred.  This makes sens in most cases, as the card will eventuallty roll over
@@ -72,10 +72,20 @@ class FluCard:
         os.chdir(homedir)
 
         if not os.path.isfile(FLUBASE_FILE):
+            # User should set a Destination Auto Import dir. If not, report error and exit.
+            # Do not create initial preferences file.
+            if self.destdir == 'None':
+                raise ValueError("Please choose a Destination Auto Import Dir with the '-d' flag.")
+
+            # Create new file if none exists
             flubase = self.new_flubase_file()
         else:
             with open (FLUBASE_FILE) as datafile:
                 flubase = json.load(datafile)
+
+            if self.destdir == 'None':
+                self.destdir = flubase['destDir']
+                print_debug("Using prior Photo Dir:" + str(self.destdir))
                 
             lastSeconds = flubase['lastSeconds']
             curSeconds = time.time()
@@ -83,7 +93,7 @@ class FluCard:
             if curSeconds - lastSeconds >= 172800:
                 # fluBase file is too old.  Create new one.
                 #NOTE# This does mean EVERY file on th ecard will be imported!
-                self.new_flubase_file()
+                flubase = self.new_flubase_file()
 
         os.chdir(cwd)   # Get back to original dir
         return flubase
@@ -101,9 +111,10 @@ class FluCard:
         seconds = time.time()
         flubase = {
             'firstFile'     : 'None',
-            'lastFile'   : 'None',
+            'lastFile'      : 'None',
             'rollover'      : False,
-            'lastSeconds'      : seconds
+            'lastSeconds'   : seconds,
+            'destDir'       : str(self.destdir)
             }
         with open(FLUBASE_FILE, 'w') as outfile:
             json.dump(flubase, outfile)
@@ -267,18 +278,18 @@ def main():
     global DEBUG
     parser = argparse.ArgumentParser(description='Get new files from FluCard')
     parser.add_argument('-i', '--ipaddr', type=str, default='192.168.1.1',help='FluCard Server IP Address')
-    parser.add_argument('-d', '--destdir', type=str, default='./AutoImport', help='Destination dir to place new photos')
-    parser.add_argument('-r', '--refresh', type=int, default=5, help='Time in second to re-check for new photos.')
+    parser.add_argument('-d', '--destdir', type=str, default='None', help='Destination dir to place new photos. Will use prior location if not set.')
+    parser.add_argument('-r', '--refresh', type=int, default=20, help='Time in second to re-check for new photos.')
     parser.add_argument('--debug',  help='Debug', action='store_true', default=False)
     args = parser.parse_args()
 
     if args.debug == True:
         DEBUG=True
 
-    print_debug ("Debug = " + str(args.debug))
-    print_debug("IP Addr  " + str(args.ipaddr))
-    print_debug("Photo Dir" + str(args.destdir))
-    print_debug("Refresh  " + str(args.refresh))
+    print_debug ("Debug:    " + str(args.debug))
+    print_debug("IP Addr:   " + str(args.ipaddr))
+    print_debug("Photo Dir: " + str(args.destdir))
+    print_debug("Refresh:   " + str(args.refresh))
 
     fc = FluCard(args)
     fc.flucard_play_beep()
