@@ -91,7 +91,7 @@ class FluCard:
             curSeconds = time.time()
             # Check if last update was two days ago or more (86400 seconds per day)
             if curSeconds - lastSeconds >= 172800:
-                # fluBase file is too old.  Create new one.
+                # flubase file is too old.  Create new one.
                 #NOTE# This does mean EVERY file on th ecard will be imported!
                 flubase = self.new_flubase_file()
 

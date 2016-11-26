@@ -84,7 +84,7 @@ class FluCard:
                 flubase = json.load(datafile)
 
             if self.destdir == 'None':
-                if hasattr(fluBase, 'destDir'):
+                if 'destDir' in flubase:
                     self.destdir = flubase['destDir']
                     print_debug("Using prior Photo Dir:" + str(self.destdir))
                 else:
@@ -237,32 +237,6 @@ class FluCard:
         photolist = self.parse_photo_list_json(r)
         return photolist
 
-    def parse_photo_list_text(self, content):
-        '''
-        Take plain-text list of files from FluCard. Must remove "<br>" and split lines on '\n'.
-
-        :param text:
-        :return: list of lines containing photo URLs. Or None.
-        '''
-        textlines = content.text.split('\n')
-        photolist=[]
-        for line in textlines:
-            line = line.replace('<br>', '')
-            if line != '':
-                #print_debug ("Line: " + line)
-                photolist.append(line)
-
-        if len(photolist) > 0:
-            photoURL = photolist[-1]
-            photoName = os.path.basename(photoURL)
-            # Assume format "ABCD1234.sfx"
-            photoNumber = int(photoName[4:8]) # returns "1234"
-
-            print_debug("Last photo seen: " + photoName)
-            return photolist
-        else:
-            return None
-
 
     def parse_photo_list_json(self, content):
         '''
@@ -278,7 +252,13 @@ class FluCard:
             folderName = dirs['name']
             for file in dirs['files']:
                 photourl = "http://"+self.ipaddr+"/v1/photos/"+folderName+"/"+file
-                photolist.append(photourl)
+
+                # For now, we only want .JPG files.
+                # Until we have a way to specifiy Card2 v.s. Card1, we will
+                # look at everything on Card 1 but just grab JPG.
+                photoSfx = os.path.splitext(photourl)
+                if photoSfx[1].lower() == '.jpg':
+                    photolist.append(photourl)
 
         if len(photolist) > 0:
             photoURL = photolist[-1]
@@ -311,6 +291,7 @@ def main():
     print_debug("IP Addr:   " + str(args.ipaddr))
     print_debug("Photo Dir: " + str(args.destdir))
     print_debug("Refresh:   " + str(args.refresh))
+    print "\n*IMPORTANT* Be sure to save JPG to Card 1, or Raw+JPG. Api cannot access card 2, yet.\n"
 
     fc = FluCard(args)
 
