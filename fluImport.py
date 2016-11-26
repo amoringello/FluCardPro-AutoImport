@@ -208,7 +208,8 @@ class FluCard:
             'firstFile'     : self.flubase['firstFile'],
             'lastFile'   : self.flubase['lastFile'],
             'rollover'      : self.flubase['rollover'],
-            'lastSeconds'      : seconds
+            'lastSeconds'      : seconds,
+            'destDir': str(self.destdir)
         }
         with open(FLUBASE_FILE, 'w') as outfile:
             json.dump(self.flubase, outfile)
@@ -219,14 +220,14 @@ class FluCard:
         Get list of photos from FluCard. Parse into list of URLs to images.
         :return: List of image URLs. None if connection failed.
         '''
-        urlPhotoList = 'http://192.168.1.1/cgi-bin/refresh'
+        urlPhotoList = 'http://' + self.ipaddr + '/cgi-bin/refresh'
         try:
             r = requests.get(urlPhotoList)
         except:
             print_debug ("Connection timeout on Refresh. Will re-try. ")
             return None
 
-        urlPhotoList = 'http://192.168.1.1/cgi-bin/photolist'
+        urlPhotoList = 'http://' + self.ipaddr + '/cgi-bin/photolist'
         try:
             r = requests.get(urlPhotoList)
         except:
@@ -239,7 +240,7 @@ class FluCard:
         return photolist
 
     def flucard_play_beep(self):
-        url = 'http://192.168.1.1/cgi-bin/playNote?fn=500'
+        url = 'http://' + self.ipaddr + '/cgi-bin/playNote?fn=500'
         for i in (0,1,2):
             requests.get(url)
 
