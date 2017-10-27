@@ -1,7 +1,8 @@
 Requires Python 2.7 with 'requests' module.
 
 # fluImport.py
-Auto Import photos from the Ricoh FluCard Pro-1 card (any camera that supports the FluCard Pro-1). 
+Auto Import photos from the Ricoh FluCard Pro-1 card (any camera that supports the FluCard Pro-1).
+No longer being worked on.  But functions well enough. 
 
 # k1Import.py
 Auto Import photos from the Pentax K1. Requires Python 2.7 with 'requests' module.
