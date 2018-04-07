@@ -96,7 +96,7 @@ import json
 
 # TODO: User Modifyable for now -- Change depending on platform.
 # These are Macintosh locations.  Change to something useful for Windows or Linux.
-K1BASE_DIR = '/Library/Preferences'
+K1BASE_DIR = '/Library/Preferences'     # Will be added to user's Home path
 K1BASE_FILE = 'com.PsychoticPsoftware.K1Import.json'
 DEBUG=False
 
@@ -148,7 +148,7 @@ class PentaxWiFi:
             # Check if last update was two days ago or more (86400 seconds per day)
             if curSeconds - lastSeconds >= 172800:
                 # k1base file is too old.  Create new one.
-                #NOTE# This does mean EVERY file on th ecard will be imported!
+                #NOTE# This does mean EVERY file on the card will be imported!
                 k1base = self.new_K1BASE_FILE()
 
         os.chdir(cwd)   # Get back to original dir
@@ -166,7 +166,9 @@ class PentaxWiFi:
         print_debug("Creating new k1base file.")
         seconds = time.time()
         k1base = {
+            'firstDir'      : 'None',
             'firstFile'     : 'None',
+            'lastDir'       : 'None',
             'lastFile'      : 'None',
             'rollover'      : False,
             'lastSeconds'   : seconds,
@@ -189,10 +191,12 @@ class PentaxWiFi:
 
         seconds = time.time()
         self.k1base = {
+            'firstDir'      : self.k1base['firstDir'],
             'firstFile'     : self.k1base['firstFile'],
-            'lastFile'   : self.k1base['lastFile'],
+            'lastDir'       : self.k1base['lastDir'],
+            'lastFile'      : self.k1base['lastFile'],
             'rollover'      : self.k1base['rollover'],
-            'lastSeconds'      : seconds,
+            'lastSeconds'   : seconds,
             'destDir': str(self.destdir)
         }
         with open(K1BASE_FILE, 'w') as outfile:
