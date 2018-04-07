@@ -107,6 +107,7 @@ class PentaxWiFi:
         self.destdir = args.destdir
         self.ipaddr  = args.ipaddr
         self.refresh = args.refresh
+        self.clean   = args.clean
         # get initial existing photo list
         self.k1base = self.get_k1_base_data()
         self.sdparam = "storage=sd"+str(args.sdcard)   # tack onto http request to specify SD card slot
@@ -124,7 +125,7 @@ class PentaxWiFi:
         homedir = os.path.expanduser("~") + K1BASE_DIR
         os.chdir(homedir)
 
-        if not os.path.isfile(K1BASE_FILE):
+        if not os.path.isfile(K1BASE_FILE) or self.clean:
             # User should set a Destination Auto Import dir. If not, report error and exit.
             # Do not create initial preferences file.
             if self.destdir == 'None':
@@ -402,6 +403,7 @@ def main():
     parser.add_argument('-s', '--sdcard', type=int, default=2, help='SDCard Slot. (1 | 2)')
     parser.add_argument('-g', '--getdng', action='store_true', default=False, help='Download DNG file instead of default JPEG.')
     parser.add_argument('-t', '--test', action='store_true', default=False, help='Start in test mode')
+    parser.add_argument('--clean',  help='Write a clean preferences file. All files will be downloaded form card.', action='store_true', default=False)
     parser.add_argument('--debug',  help='Debug', action='store_true', default=False)
     args = parser.parse_args()
 
@@ -417,6 +419,7 @@ def main():
         raise ValueError ("SDCard must be either 1 or 2")
 
     print_debug("Debug:     " + str(args.debug))
+    print_debug("Clean:     " + str(args.clean))
     print_debug("IP Addr:   " + str(args.ipaddr))
     print_debug("Photo Dir: " + str(args.destdir))
     print_debug("Refresh:   " + str(args.refresh))
