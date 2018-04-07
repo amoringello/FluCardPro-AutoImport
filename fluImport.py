@@ -56,6 +56,7 @@ class FluCard:
         self.destdir = args.destdir
         self.ipaddr  = args.ipaddr
         self.refresh = args.refresh
+        self.clean   = args.clean
         # get initial existing photo list
         self.flubase = self.get_flu_base_data()
 
@@ -71,7 +72,7 @@ class FluCard:
         homedir = os.path.expanduser("~") + FLUBASE_DIR
         os.chdir(homedir)
 
-        if not os.path.isfile(FLUBASE_FILE):
+        if not os.path.isfile(FLUBASE_FILE) or self.clean:
             # User should set a Destination Auto Import dir. If not, report error and exit.
             # Do not create initial preferences file.
             if self.destdir == 'None':
@@ -148,6 +149,8 @@ class FluCard:
             # Assume format "ABCD1234.sfx"
             photoNumber = int(photoName[4:8]) # returns "1234"
             download = False
+
+
 
             if self.flubase['rollover'] == False and photoNumber > lastNum and photoNumber > firstNum:
                 download = True
@@ -281,6 +284,7 @@ def main():
     parser.add_argument('-i', '--ipaddr', type=str, default='192.168.1.1',help='FluCard Server IP Address')
     parser.add_argument('-d', '--destdir', type=str, default='None', help='Destination dir to place new photos. Will use prior location if not set.')
     parser.add_argument('-r', '--refresh', type=int, default=20, help='Time in second to re-check for new photos.')
+    parser.add_argument('--clean',  help='Write a clean preferences file. All files will be downloaded form card.', action='store_true', default=False)
     parser.add_argument('--debug',  help='Debug', action='store_true', default=False)
     args = parser.parse_args()
 
@@ -291,6 +295,7 @@ def main():
     print_debug("IP Addr:   " + str(args.ipaddr))
     print_debug("Photo Dir: " + str(args.destdir))
     print_debug("Refresh:   " + str(args.refresh))
+    print_debug("Clean:     " + str(args.clean))
 
     fc = FluCard(args)
     fc.flucard_play_beep()
