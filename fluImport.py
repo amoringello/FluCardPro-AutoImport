@@ -150,8 +150,6 @@ class FluCard:
             photoNumber = int(photoName[4:8]) # returns "1234"
             download = False
 
-
-
             if self.flubase['rollover'] == False and photoNumber > lastNum and photoNumber > firstNum:
                 download = True
             if self.flubase['rollover'] == True and ((photoNumber < firstNum and photoNumber > lastNum) or lastNum == 9999):
