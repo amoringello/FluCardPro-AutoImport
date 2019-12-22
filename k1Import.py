@@ -230,8 +230,12 @@ class PentaxWiFi:
         Parse JSON of Folder/Files list obtained from camera.
         Create a simple list of full URL to image;
             http://{ipAddr}/v1/photos/{folder}/{photoName}
-        :param content: content object from http request
-        :return: list of image URLs
+
+        Args:
+            content (request.Response): content object from http request
+
+        Returns:
+            (:obj:'list' of :obj:'str'): list of image URLs
         """
         photojson = json.loads(content.text)
         photolist = []
