@@ -89,6 +89,7 @@ E.g. ?http://192.168.0.1/v1/photos?storage=sd2?
 """
 
 import requests
+from requests.exceptions import Timeout
 import argparse
 import os
 import time
@@ -215,8 +216,8 @@ class PentaxWiFi:
         print_debug("Get photo list from URL: " + url_photo_list)
         # noinspection PyBroadException
         try:
-            r = requests.get(url_photo_list)
-        except Exception:
+            r = requests.get(url_photo_list, timeout=(2, 5))
+        except Timeout:
             print_debug("Connection timeout on PhotoList. Will re-try. ")
             return None
 
@@ -444,6 +445,7 @@ def main():
     print_debug("FileType:  " + ("DNG" if args.getdng else "JPG"))
 
     fc = PentaxWiFi(args)
+    print_debug("LastFile:  {}".format(fc.k1base['lastFile']))
 
     while 1:
         if testrun:  # Allow user to enter commands.
