@@ -164,7 +164,8 @@ class PentaxWiFi:
         This puts things in a state where EVERY file on the SD Card will be imported.
         Normally this is a good thing, as when this program is first run.
         The database is also reset after two days, which in most cases makes sense.
-        :return: no returns
+
+        Returns: no returns
         """
         # 86400 seconds per day
         print_debug("Creating new k1base file.")
@@ -187,7 +188,8 @@ class PentaxWiFi:
         """
         Write new info to k1base file.
         Stores latest captured file info so we can re-run and continue from where we left off.
-        :return: no returns
+
+        Returns: no returns
         """
         cwd = os.getcwd()  # save original dir
         homedir = os.path.expanduser("~") + K1BASE_DIR
@@ -210,7 +212,8 @@ class PentaxWiFi:
     def get_photo_list(self):
         """
         Get list of photos from PentaxWiFi. Parse into list of image URLs.
-        :return: List of image URLs. None if connection failed.
+        Returns:
+            List of image URLs. None if connection failed.
         """
         url_photo_list = 'http://' + self.ipaddr + '/v1/photos' + "?" + self.sdparam
         print_debug("Get photo list from URL: " + url_photo_list)
@@ -266,7 +269,8 @@ class PentaxWiFi:
         Args:
             photo_url: URL of photo do download. e.g. 'http://192.168.0.1/v1/photos/104_1125/_AMP0061.JPG?storage=sd2'
 
-        Returns: True if file is written successfully
+        Returns:
+            bool: True if file is written successfully
         """
         photo_name = os.path.basename(photo_url)
         print_debug("Downloading: " + photo_name)
@@ -334,10 +338,11 @@ class PentaxWiFi:
     def test(self, testarg):
         """
         Get list of photos from PentaxWiFi. Parse into list of URLs to images.
-        :return: List of image URLs. None if connection failed.
+        Returns:
+            List of image URLs. None if connection failed.
         """
         if testarg == "?":
-            print """
+            print("""
 "photos/path"
 "photos:path/info"
 "photos/latest/info"
@@ -382,11 +387,11 @@ class PentaxWiFi:
 "changes"
 "apis"
  ?storage=sd{1,2}
-"""
+""")
             return
 
         url = 'http://' + self.ipaddr + '/v1/' + testarg
-        print "URL: " + url
+        print("URL: " + url)
         # noinspection PyBroadException
         try:
             r = requests.get(url)
@@ -395,16 +400,16 @@ class PentaxWiFi:
             return None
 
         if r.status_code == 200:
-            print "Result: \n"
-            print r.content
+            print("Result: \n")
+            print(r.content)
             return None
-        print "Non-200 result"
+        print("Non-200 result")
         return
 
 
 def print_debug(args):
     if DEBUG:
-        print "DEBUG: " + args
+        print("DEBUG: " + args)
 
 
 # The 'type=str' in the parser.add_argument will cause IDE warnings.  Ignore them.
