@@ -118,11 +118,12 @@ class PentaxWiFi:
         if not os.path.isdir(self.destdir):
             raise ValueError('Storage Directory does not exist: ' + self.destdir)
 
-    def get_k1_base_data(self):
+    def get_k1_base_data(self) -> dict:
         """
         Obtain values from k1base preferences database file.
 
-        Returns: Dictionary of values
+        Returns:
+            Dictionary of values
         """
         cwd = os.getcwd()  # save original dir
         homedir = os.path.expanduser("~") + K1BASE_DIR
@@ -158,14 +159,15 @@ class PentaxWiFi:
         os.chdir(cwd)  # Get back to original dir
         return k1base
 
-    def new_k1base_file(self):
+    def new_k1base_file(self) -> dict:
         """
         Create new k1base preferences file.
         This puts things in a state where EVERY file on the SD Card will be imported.
         Normally this is a good thing, as when this program is first run.
         The database is also reset after two days, which in most cases makes sense.
 
-        Returns: no returns
+        Returns:
+            Dictionary of values
         """
         # 86400 seconds per day
         print_debug("Creating new k1base file.")
@@ -189,7 +191,8 @@ class PentaxWiFi:
         Write new info to k1base file.
         Stores latest captured file info so we can re-run and continue from where we left off.
 
-        Returns: no returns
+        Returns:
+            None
         """
         cwd = os.getcwd()  # save original dir
         homedir = os.path.expanduser("~") + K1BASE_DIR
@@ -212,8 +215,7 @@ class PentaxWiFi:
     def get_photo_list(self):
         """
         Get list of photos from PentaxWiFi. Parse into list of image URLs.
-        Returns:
-            List of image URLs. None if connection failed.
+        :return: List of image URLs. None if connection failed.
         """
         url_photo_list = 'http://' + self.ipaddr + '/v1/photos' + "?" + self.sdparam
         print_debug("Get photo list from URL: " + url_photo_list)
@@ -229,7 +231,7 @@ class PentaxWiFi:
         photolist = self.parse_photo_list_json(r)
         return photolist
 
-    def parse_photo_list_json(self, content):
+    def parse_photo_list_json(self, content) -> list:
         """
         Parse JSON of Folder/Files list obtained from camera.
         Create a simple list of full URL to image;
@@ -262,18 +264,17 @@ class PentaxWiFi:
             print_debug("Last photo seen: " + photo_name)
             return photolist
         else:
-            return None
+            return None  # noqa  None is valid return for a List.
 
-    def download_photo(self, photo_url):
+    def download_photo(self, photo_url: str) -> bool:
         """
         Args:
             photo_url: URL of photo do download. e.g. 'http://192.168.0.1/v1/photos/104_1125/_AMP0061.JPG?storage=sd2'
 
-        Returns:
-            bool: True if file is written successfully
+        Returns: True if file is written successfully
         """
         photo_name = os.path.basename(photo_url)
-        print_debug("Downloading: " + photo_name)
+        print("Downloading: " + photo_name)
 
         r = requests.get(photo_url + '?' + self.sdparam)
         # noinspection PyBroadException
@@ -291,7 +292,8 @@ class PentaxWiFi:
     def get_new_photos(self):
         """
         Download all new photos and update k1base file.
-        Returns: No returns.
+        Returns:
+            None
         """
         photo_list = self.get_photo_list()
         if photo_list is None:
@@ -335,11 +337,11 @@ class PentaxWiFi:
                 # Be sure to update after each download in case of intermediate failure.
                 self.update_k1_base_data()
 
-    def test(self, testarg):
+    def test(self, testarg: str) -> None:
         """
         Get list of photos from PentaxWiFi. Parse into list of URLs to images.
         Returns:
-            List of image URLs. None if connection failed.
+            None
         """
         if testarg == "?":
             print("""
