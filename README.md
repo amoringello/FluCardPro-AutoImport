@@ -21,3 +21,8 @@ script may fail to get new photos.
 With that, there is room for improvement with how the latest unread photos might be 
 determined and the above issue might be avoidable.
 
+
+If you like Python environments, you can do the following...
+$ pienv install
+$ pipenv run python3 k1import.py -d <full p[ath to store files> 
+
