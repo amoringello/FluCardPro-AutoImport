@@ -456,7 +456,7 @@ def main():
 
     while 1:
         if testrun:  # Allow user to enter commands.
-            myarg = raw_input("Enter Command: ")
+            myarg = input("Enter Command: ")
             if myarg == "run":
                 testrun = False  # Next loop, stop testing and do actual intended functionality
                 continue
