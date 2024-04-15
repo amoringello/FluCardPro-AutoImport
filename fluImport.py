@@ -1,4 +1,4 @@
-'''
+"""
 Author: Anthony Moringello Photography
         & Psychotic Psoftware
 
@@ -37,202 +37,210 @@ file download occurred.  This makes sens in most cases, as the card will eventua
 file numbers and we need a way to not get confused.
 NOTE: This does mean that after two days, EVERY file on the card will be re-downloaded.
 It is a best practice to clean your card before any major use.
-'''
+"""
 
-import requests
+from typing import Union, Dict, Any
+import requests  # type: ignore  FYI, No higher than Python 3.11
 import argparse
 import os
 import time
 import json
 
-FLUBASE_DIR = '/Library/Preferences'
-FLUBASE_FILE = 'com.PsychoticPsoftware.FluImport.json'
-DEBUG=False
+FLUBASE_DIR = "/Library/Preferences"
+FLUBASE_FILE = "com.PsychoticPsoftware.FluImport.json"
+DEBUG = False
+
 
 class FluCard:
 
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace):
         # get args
-        self.destdir = args.destdir
-        self.ipaddr  = args.ipaddr
-        self.refresh = args.refresh
-        self.clean   = args.clean
+        self.destdir: str = str(args.destdir)  # type: ignore
+        self.ipaddr: str = args.ipaddr  # type: ignore
+        self.refresh: float = args.refresh  # type: ignore
+        self.clean: bool = args.clean  # type: ignore
         # get initial existing photo list
-        self.flubase = self.get_flu_base_data()
+        self.flubase: Dict[str, Any] = self.get_flu_base_data()
 
         if not os.path.isdir(self.destdir):
-            raise ValueError('Storage Directory does not exist: ' + self.destdir)
+            raise ValueError("Storage Directory does not exist: " + self.destdir)
 
-    def get_flu_base_data(self):
-        '''
+    def get_flu_base_data(self) -> Dict[str, Any]:
+        """
         Obtain values from flubase database.
         :return: Dictionary of values
-        '''
-        cwd = os.getcwd() # save original dir
+        """
+        cwd = os.getcwd()  # save original dir
         homedir = os.path.expanduser("~") + FLUBASE_DIR
         os.chdir(homedir)
 
         if not os.path.isfile(FLUBASE_FILE) or self.clean:
             # User should set a Destination Auto Import dir. If not, report error and exit.
             # Do not create initial preferences file.
-            if self.destdir == 'None':
-                raise ValueError("Please choose a Destination Auto Import Dir with the '-d' flag.")
+            if self.destdir == "None":
+                raise ValueError(
+                    "Please choose a Destination Auto Import Dir with the '-d' flag."
+                )
 
             # Create new file if none exists
             flubase = self.new_flubase_file()
         else:
-            with open (FLUBASE_FILE) as datafile:
+            with open(FLUBASE_FILE) as datafile:
                 flubase = json.load(datafile)
 
-            if self.destdir == 'None':
-                self.destdir = flubase['destDir']
+            if self.destdir == "None":
+                self.destdir = flubase["destDir"]
                 print_debug("Using prior Photo Dir:" + str(self.destdir))
-                
-            lastSeconds = flubase['lastSeconds']
+
+            lastSeconds = flubase["lastSeconds"]
             curSeconds = time.time()
             # Check if last update was two days ago or more (86400 seconds per day)
             if curSeconds - lastSeconds >= 172800:
                 # flubase file is too old.  Create new one.
-                #NOTE# This does mean EVERY file on th ecard will be imported!
+                # NOTE: This does mean EVERY file on th ecard will be imported!
                 flubase = self.new_flubase_file()
 
-        os.chdir(cwd)   # Get back to original dir
+        os.chdir(cwd)  # Get back to original dir
         return flubase
 
-    def new_flubase_file(self):
-        '''
+    def new_flubase_file(self) -> Dict[str, Any]:
+        """
         Create new fluBase preferences file.
         This puts things ins state where EVERY file on the FluCard will be imported.
         Normally this is a good thing, as when this program is first run.
         The database is also reset after two days, which in most cases makes sense.
         :return: no returns
-        '''
+        """
         # 86400 seconds per day
         print_debug("Creating new FluBase file.")
         seconds = time.time()
         flubase = {
-            'firstFile'     : 'None',
-            'lastFile'      : 'None',
-            'rollover'      : False,
-            'lastSeconds'   : seconds,
-            'destDir'       : str(self.destdir)
-            }
-        with open(FLUBASE_FILE, 'w') as outfile:
+            "firstFile": "None",
+            "lastFile": "None",
+            "rollover": False,
+            "lastSeconds": seconds,
+            "destDir": str(self.destdir),
+        }
+        with open(FLUBASE_FILE, "w") as outfile:
             json.dump(flubase, outfile)
 
         return flubase
 
-    def get_dest_dir_photo_list(self):
-        '''
+    def get_dest_dir_photo_list(self) -> list[str]:
+        """
         Get list of photo names in self.destdir.
 
         :return: List of existing files in self.destdir
-        '''
+        """
         files = os.listdir(self.destdir)
         return files
 
-    def get_new_photos(self):
-        photoList = self.get_photo_list()
-        if photoList == None:
+    def get_new_photos(self) -> None:
+        photoList: Union[list[str], None] = self.get_photo_list()
+        if photoList is None:
             return
         for photoURL in photoList:
-            if self.flubase['lastFile'] == 'None':
+            if self.flubase["lastFile"] == "None":
                 lastNum = -1
             else:
-                lastNum = int(self.flubase['lastFile'])
-            if self.flubase['firstFile'] == 'None':
+                lastNum = int(self.flubase["lastFile"])
+            if self.flubase["firstFile"] == "None":
                 firstNum = -1  # accept any file number on first download
             else:
-                firstNum = int(self.flubase['firstFile'])
+                firstNum = int(self.flubase["firstFile"])
 
             photoName = os.path.basename(photoURL)
             # Assume format "ABCD1234.sfx"
-            photoNumber = int(photoName[4:8]) # returns "1234"
+            photoNumber = int(photoName[4:8])  # returns "1234"
             download = False
 
-            if self.flubase['rollover'] == False and photoNumber > lastNum and photoNumber > firstNum:
+            if (
+                self.flubase["rollover"] is False
+                and photoNumber > lastNum
+                and photoNumber > firstNum
+            ):
                 download = True
-            if self.flubase['rollover'] == True and ((photoNumber < firstNum and photoNumber > lastNum) or lastNum == 9999):
+            if self.flubase["rollover"] and (
+                (photoNumber < firstNum and photoNumber > lastNum) or lastNum == 9999
+            ):
                 download = True
 
-            if download == True:
+            if download:
                 if photoNumber == firstNum:
-                    print_debug ("Rollover limit...")
-                    for i in range(1,5):
+                    print_debug("Rollover limit...")
+                    for _ in range(1, 5):
                         self.flucard_play_beep()
                     break
                 # DOWNLOAD NEW PHOTO(S)
-                if self.downloadPhoto(photoURL) == False:
+                if not self.downloadPhoto(photoURL):
                     # Failed. Retry later. Do not update flubase, do not pass Go.
                     break
                 if photoNumber == 9999:
-                    self.flubase['rollover'] = True
-                self.flubase['lastFile'] = str(photoNumber)
-                if self.flubase['firstFile'] == 'None':
-                    self.flubase['firstFile'] = str(photoNumber)
+                    self.flubase["rollover"] = True
+                self.flubase["lastFile"] = str(photoNumber)
+                if self.flubase["firstFile"] == "None":
+                    self.flubase["firstFile"] = str(photoNumber)
                 # Be sure to update after each download in case of intermediate failure.
                 self.update_flu_base_data()
 
-    def downloadPhoto(self, photoURL):
-        '''
-
+    def downloadPhoto(self, photoURL: str) -> bool:
+        """
         :param photoURL: URL
         :return: none
-        '''
+        """
         photoName = os.path.basename(photoURL)
-        print_debug ("Downloading: " + photoName)
+        print_debug("Downloading: " + photoName)
 
         r = requests.get(photoURL)
         try:
-            filename =  self.destdir + '/' + str(photoName)
+            filename = self.destdir + "/" + str(photoName)
             with open(filename, "wb") as outfile:
-                data=bytearray(r.content)
+                data = bytearray(r.content)
                 outfile.write(data)
-        except:
-            print_debug ('Error writing file. Will re-try later.')
+        except:  # noqa  We don't care which exception
+            print_debug("Error writing file. Will re-try later.")
             return False
 
         return True
 
-
     def update_flu_base_data(self):
-        '''
+        """
         Write new info to flubase file.
         :return:
-        '''
-        cwd = os.getcwd() # save original dir
+        """
+        cwd = os.getcwd()  # save original dir
         homedir = os.path.expanduser("~") + FLUBASE_DIR
         os.chdir(homedir)
 
         seconds = time.time()
         self.flubase = {
-            'firstFile'     : self.flubase['firstFile'],
-            'lastFile'   : self.flubase['lastFile'],
-            'rollover'      : self.flubase['rollover'],
-            'lastSeconds'      : seconds,
-            'destDir': str(self.destdir)
+            "firstFile": self.flubase["firstFile"],
+            "lastFile": self.flubase["lastFile"],
+            "rollover": self.flubase["rollover"],
+            "lastSeconds": seconds,
+            "destDir": str(self.destdir),
         }
-        with open(FLUBASE_FILE, 'w') as outfile:
+        with open(FLUBASE_FILE, "w") as outfile:
             json.dump(self.flubase, outfile)
         os.chdir(cwd)
 
-    def get_photo_list(self):
-        '''
+    def get_photo_list(self) -> Union[list[str], None]:
+        """
         Get list of photos from FluCard. Parse into list of URLs to images.
         :return: List of image URLs. None if connection failed.
-        '''
-        urlPhotoList = 'http://' + self.ipaddr + '/cgi-bin/refresh'
+        """
+        urlPhotoList = "http://" + self.ipaddr + "/cgi-bin/refresh"
         try:
             r = requests.get(urlPhotoList)
-        except:
-            print_debug ("Connection timeout on Refresh. Will re-try. ")
+        except:  # noqa  We don't care which exception
+            print_debug("Connection timeout on Refresh. Will re-try. ")
             return None
 
-        urlPhotoList = 'http://' + self.ipaddr + '/cgi-bin/photolist'
+        urlPhotoList = "http://" + self.ipaddr + "/cgi-bin/photolist"
         try:
             r = requests.get(urlPhotoList)
-        except:
-            print_debug ("Connection timeout on PhotoList. Will re-try. ")
+        except:  # noqa  We don't care which exception
+            print_debug("Connection timeout on PhotoList. Will re-try. ")
             return None
 
         if r.status_code != 200:
@@ -241,55 +249,81 @@ class FluCard:
         return photolist
 
     def flucard_play_beep(self):
-        url = 'http://' + self.ipaddr + '/cgi-bin/playNote?fn=500'
-        for i in (0,1,2):
+        url = "http://" + self.ipaddr + "/cgi-bin/playNote?fn=500"
+        for _ in (0, 1, 2):
             requests.get(url)
 
-
-    def parse_photo_list_text(self, content):
-        '''
+    def parse_photo_list_text(
+        self, content: requests.Response
+    ) -> Union[list[str], None]:
+        """
         Take plain-text list of files from FluCard. Must remove "<br>" and split lines on '\n'.
 
         :param text:
         :return: list of lines containing photo URLs. Or None.
-        '''
-        textlines = content.text.split('\n')
-        photolist=[]
+        """
+        textlines: list[str] = content.text.split("\n")
+        photolist: list[str] = []
         for line in textlines:
-            line = line.replace('<br>', '')
-            if line != '':
-                #print_debug ("Line: " + line)
+            line = line.replace("<br>", "")
+            if line != "":
+                # print_debug ("Line: " + line)
                 photolist.append(line)
 
         if len(photolist) > 0:
             photoURL = photolist[-1]
             photoName = os.path.basename(photoURL)
             # Assume format "ABCD1234.sfx"
-            photoNumber = int(photoName[4:8]) # returns "1234"
+            # photoNumber = int(photoName[4:8]) # returns "1234"
 
             print_debug("Last photo seen: " + photoName)
             return photolist
         else:
             return None
 
-def print_debug(args):
-    if DEBUG == True:
-        print "DEBUG: " + args
+
+def print_debug(args: str) -> None:
+    if DEBUG:
+        print("DEBUG: " + args)
+
 
 def main():
     global DEBUG
-    parser = argparse.ArgumentParser(description='Get new files from FluCard')
-    parser.add_argument('-i', '--ipaddr', type=str, default='192.168.1.1',help='FluCard Server IP Address')
-    parser.add_argument('-d', '--destdir', type=str, default='None', help='Destination dir to place new photos. Will use prior location if not set.')
-    parser.add_argument('-r', '--refresh', type=int, default=20, help='Time in second to re-check for new photos.')
-    parser.add_argument('--clean',  help='Write a clean preferences file. All files will be downloaded form card.', action='store_true', default=False)
-    parser.add_argument('--debug',  help='Debug', action='store_true', default=False)
+    parser = argparse.ArgumentParser(description="Get new files from FluCard")
+    parser.add_argument(
+        "-i",
+        "--ipaddr",
+        type=str,
+        default="192.168.1.1",
+        help="FluCard Server IP Address",
+    )
+    parser.add_argument(
+        "-d",
+        "--destdir",
+        type=str,
+        default="None",
+        help="Destination dir to place new photos. Will use prior location if not set.",
+    )
+    parser.add_argument(
+        "-r",
+        "--refresh",
+        type=int,
+        default=20,
+        help="Time in second to re-check for new photos.",
+    )
+    parser.add_argument(
+        "--clean",
+        help="Write a clean preferences file. All files will be downloaded form card.",
+        action="store_true",
+        default=False,
+    )
+    parser.add_argument("--debug", help="Debug", action="store_true", default=False)
     args = parser.parse_args()
 
-    if args.debug == True:
-        DEBUG=True
+    if args.debug:
+        DEBUG = True  # type: ignore  F- Constants. We do what we want.
 
-    print_debug ("Debug:    " + str(args.debug))
+    print_debug("Debug:    " + str(args.debug))
     print_debug("IP Addr:   " + str(args.ipaddr))
     print_debug("Photo Dir: " + str(args.destdir))
     print_debug("Refresh:   " + str(args.refresh))
@@ -298,11 +332,12 @@ def main():
     fc = FluCard(args)
     fc.flucard_play_beep()
 
-    while (1):
-        result = fc.get_new_photos()
+    while 1:
+        fc.get_new_photos()
 
         # Wait some time and try again.....
         time.sleep(fc.refresh)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
