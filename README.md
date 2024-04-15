@@ -1,4 +1,7 @@
-Requires Python 2.7 with 'requests' module.
+Requires 'requests' module.
+IMPORTANT: At this time requests module does not work with Pytohnn 3.12.
+           Be sure to use Python 3.11 or lower.
+
 
 # fluImport.py
 Auto Import photos from the Ricoh FluCard Pro-1 card (any camera that supports the FluCard Pro-1).
