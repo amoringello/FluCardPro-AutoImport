@@ -1,5 +1,5 @@
-"""
-Author: Anthony Moringello Photography
+"""Author: Anthony Moringello Photography.
+
         & Psychotic Psoftware
 
 Licensing: Creative Commons.
@@ -87,13 +87,16 @@ K1 REST API
 Add ?storage=sd{1,2}
 E.g. ?http://192.168.0.1/v1/photos?storage=sd2?
 """
-from typing import Union, Dict, Any
-import requests  # type: ignore  FYI, No higher than Python 3.11
-from requests.exceptions import Timeout  # type: ignore
+from __future__ import annotations
+
 import argparse
+import json
 import os
 import time
-import json
+from typing import Any
+
+import requests  # type: ignore  FYI, No higher than Python 3.11
+from requests.exceptions import Timeout
 
 # Note: User Modifyable for now -- For future work, change depending on platform.
 # These are Macintosh locations.  Change to something useful for Windows or Linux.
@@ -103,46 +106,46 @@ DEBUG = False
 
 
 class PentaxWiFi:
+    """Communication class for Pentax WiFi."""
 
-    def __init__(self, args: argparse.Namespace):
+    def __init__(self, args: argparse.Namespace) -> None:
+        """Init."""
         # get args
-        self.destdir: str = str(args.destdir)  # type: ignore
-        self.ipaddr: str = args.ipaddr  # type: ignore
-        self.refresh: float = args.refresh  # type: ignore
-        self.clean: bool = args.clean  # type: ignore
+        self.destdir: str = str(args.destdir)
+        self.ipaddr: str = args.ipaddr
+        self.refresh: float = args.refresh
+        self.clean: bool = args.clean
         # get initial existing photo list
-        self.k1base: Dict[str, Any] = self.get_k1_base_data()
-        self.sdparam = "storage=sd" + str(
-            args.sdcard
-        )  # tack onto http request to specify SD card slot
-        self.suffix = ".DNG" if args.getdng else ".JPG"
+        self.k1base: dict[str, Any] = self.get_k1_base_data()
+        # tack onto http request to specify SD card slot
+        self.sdparam = "storage=sd" + str(args.sdcard)
+        self.suffix: str = ".DNG" if args.getdng else ".JPG"
 
-        if not os.path.isdir(self.destdir):
+        if not os.path.isdir(self.destdir):  # noqa: PTH112
             raise ValueError("Storage Directory does not exist: " + self.destdir)
 
-    def get_k1_base_data(self) -> Dict[str, Any]:
-        """
-        Obtain values from k1base preferences database file.
+    def get_k1_base_data(self) -> dict[str, Any]:
+        """Obtain values from k1base preferences database file.
 
         Returns:
             Dictionary of values
+
         """
-        cwd = os.getcwd()  # save original dir
-        homedir = os.path.expanduser("~") + K1BASE_DIR
+        cwd = os.getcwd()  # save original dir  # noqa: PTH109
+        homedir = os.path.expanduser("~") + K1BASE_DIR  # noqa: PTH111
         os.chdir(homedir)
 
-        if not os.path.isfile(K1BASE_FILE) or self.clean:
+        if not os.path.isfile(K1BASE_FILE) or self.clean:  # noqa: PTH113
             # User should set a Destination Auto Import dir. If not, report error and exit.
             # Do not create initial preferences file.
             if self.destdir == "None":
-                raise ValueError(
-                    "Please choose a Destination Auto Import Dir with the '-d' flag."
-                )
+                msg = "Please choose a Destination Auto Import Dir with the '-d' flag."
+                raise ValueError(msg)
 
             # Create new file if none exists
             k1base = self.new_k1base_file()
         else:
-            with open(K1BASE_FILE) as datafile:
+            with open(K1BASE_FILE) as datafile:  # noqa: PTH123
                 k1base = json.load(datafile)
 
             if self.destdir == "None":
@@ -150,9 +153,8 @@ class PentaxWiFi:
                     self.destdir = k1base["destDir"]
                     print_debug("Using prior Photo Dir:" + str(self.destdir))
                 else:
-                    raise AttributeError(
-                        "Prior AutoImport Dir not found in Preference file.  Supply on command line."
-                    )
+                    msg = "Prior AutoImport Dir not found in Preference file.  Supply on command line."
+                    raise AttributeError(msg)
 
             last_seconds = k1base["lastSeconds"]
             cur_seconds = time.time()
@@ -160,25 +162,26 @@ class PentaxWiFi:
             if cur_seconds - last_seconds >= 172800:
                 # k1base file is too old.  Create new one.
                 # NOTE: This does mean EVERY file on the card will be imported!
-                k1base = self.new_k1base_file()
+                k1base: dict[str, Any] = self.new_k1base_file()
 
         os.chdir(cwd)  # Get back to original dir
         return k1base
 
-    def new_k1base_file(self) -> Dict[str, Any]:
-        """
-        Create new k1base preferences file.
+    def new_k1base_file(self) -> dict[str, Any]:
+        """Create new k1base preferences file.
+
         This puts things in a state where EVERY file on the SD Card will be imported.
         Normally this is a good thing, as when this program is first run.
         The database is also reset after two days, which in most cases makes sense.
 
         Returns:
             Dictionary of values
+
         """
         # 86400 seconds per day
         print_debug("Creating new k1base file.")
-        seconds = time.time()
-        k1base = {
+        seconds: float = time.time()
+        k1base: dict[str, Any] = {
             "firstDir": "None",
             "firstFile": "None",
             "lastDir": "None",
@@ -187,21 +190,22 @@ class PentaxWiFi:
             "lastSeconds": seconds,
             "destDir": str(self.destdir),
         }
-        with open(K1BASE_FILE, "w") as outfile:
-            json.dump(k1base, outfile)
+        with open(file=K1BASE_FILE, mode="w") as outfile:  # noqa: PTH123
+            json.dump(obj=k1base, fp=outfile)
 
         return k1base
 
-    def update_k1_base_data(self):
-        """
-        Write new info to k1base file.
+    def update_k1_base_data(self) -> None:
+        """Write new info to k1base file.
+
         Stores latest captured file info so we can re-run and continue from where we left off.
 
         Returns:
             None
+
         """
-        cwd = os.getcwd()  # save original dir
-        homedir = os.path.expanduser("~") + K1BASE_DIR
+        cwd = os.getcwd()  # save original dir  # noqa: PTH109
+        homedir = os.path.expanduser("~") + K1BASE_DIR  # noqa: PTH111
         os.chdir(homedir)
 
         seconds = time.time()
@@ -214,14 +218,16 @@ class PentaxWiFi:
             "lastSeconds": seconds,
             "destDir": str(self.destdir),
         }
-        with open(K1BASE_FILE, "w") as outfile:
+        with open(K1BASE_FILE, "w") as outfile:  # noqa: PTH123
             json.dump(self.k1base, outfile)
         os.chdir(cwd)
 
-    def get_photo_list(self) -> Union[list[str], None]:
-        """
-        Get list of photos from PentaxWiFi. Parse into list of image URLs.
-        :return: List of image URLs. None if connection failed.
+    def get_photo_list(self) -> list[str] | None:
+        """Get list of photos from PentaxWiFi. Parse into list of image URLs.
+
+        Returns:
+            List of image URLs. None if connection failed.
+
         """
         url_photo_list = "http://" + self.ipaddr + "/v1/photos" + "?" + self.sdparam
         print_debug("Get photo list from URL: " + url_photo_list)
@@ -234,15 +240,13 @@ class PentaxWiFi:
 
         if r.status_code != 200:
             return None
-        photolist = self.parse_photo_list_json(r)
+        photolist: list[str] | None = self.parse_photo_list_json(r)
         return photolist
 
-    def parse_photo_list_json(
-        self, content: requests.Response
-    ) -> Union[list[str], None]:
-        """
-        Parse JSON of Folder/Files list obtained from camera.
-        Create a simple list of full URL to image;
+    def parse_photo_list_json(self, content: requests.Response) -> list[str] | None:
+        """Parse JSON of Folder/Files list obtained from camera.
+
+                Create a simple list of full URL to image;
             http://{ipAddr}/v1/photos/{folder}/{photoName}
 
         Args:
@@ -250,13 +254,14 @@ class PentaxWiFi:
 
         Returns:
             (:obj:'list' of :obj:'str'): list of image URLs
+
         """
-        photojson: Dict[str, Any] = json.loads(content.text)
+        photojson: dict[str, Any] = json.loads(content.text)
         photolist: list[str] = []
         for dirs in photojson["dirs"]:
             folder_name = dirs["name"]
             for filename in dirs["files"]:
-                photourl = (
+                photo_url = (
                     "http://"
                     + self.ipaddr
                     + "/v1/photos/"
@@ -266,64 +271,68 @@ class PentaxWiFi:
                 )
 
                 # BY default, we only want .JPG files. But is now user-specified.
-                photo_sfx = os.path.splitext(photourl)
+                photo_sfx = os.path.splitext(photo_url)  # noqa: PTH122
                 if photo_sfx[1] == self.suffix:
-                    photolist.append(photourl)
+                    photolist.append(photo_url)
 
         if len(photolist) > 0:
             photo_url = photolist[-1]
-            photo_name = os.path.basename(photo_url)
+            photo_name = os.path.basename(photo_url)  # noqa: PTH119
             # # Assume format "ABCD1234.sfx"
             # photo_number = int(photo_name[4:8])  # returns "1234"
 
             print_debug("Last photo seen: " + photo_name)
             return photolist
-        else:
-            return None  # noqa  None is valid return for a List.
+
+        return None
 
     def download_photo(self, photo_url: str) -> bool:
-        """
+        """Download photo data from the card.
+
         Args:
             photo_url: URL of photo do download. e.g. 'http://192.168.0.1/v1/photos/104_1125/_AMP0061.JPG?storage=sd2'
 
-        Returns: True if file is written successfully
-        """
-        photo_name = os.path.basename(photo_url)
-        print("Downloading: " + photo_name)
+        Returns:
+            True if file is written successfully
 
-        r = requests.get(photo_url + "?" + self.sdparam)
+        """
+        photo_name = os.path.basename(photo_url)  # noqa: PTH119
+        print("Downloading: " + photo_name)  # noqa: T201 -- yes we want PRINT
+
+        r: requests.Response = requests.get(photo_url + "?" + self.sdparam)  # noqa: S113
         # noinspection PyBroadException
         try:
             filename = self.destdir + "/" + str(photo_name)
-            with open(filename, "wb") as outfile:
+            with open(filename, "wb") as outfile:  # noqa: PTH123
                 data = bytearray(r.content)
                 outfile.write(data)
-        except Exception:
+        except Exception:  # we dont care why the exception happened. # noqa: BLE001
             print_debug("Error writing file. Will re-try later.")
             return False
 
         return True
 
-    def get_new_photos(self):
-        """
-        Download all new photos and update k1base file.
+    def get_new_photos(self) -> None:  # noqa: C901, PLR0912  # aww, wanna cry; too complex?
+        """Download all new photos and update k1base file.
+
         Returns:
             None
+
         """
-        photo_list = self.get_photo_list()
+        photo_list: list[str] | None = self.get_photo_list()
         if photo_list is None:
             return
-        for photoURL in photo_list:
-            if self.k1base["lastFile"] == "None":
+        for photo_url in photo_list:
+            if self.k1base["lastFile"] == "None":  # noqa: SIM108
                 last_num = -1
             else:
                 last_num = int(self.k1base["lastFile"])
-            if self.k1base["firstFile"] == "None":
+            if self.k1base["firstFile"] == "None":  # noqa: SIM108
                 first_num = -1  # accept any file number on first download
             else:
                 first_num = int(self.k1base["firstFile"])
 
-            photo_name = os.path.basename(photoURL)
+            photo_name = os.path.basename(photo_url)  # noqa: PTH119
             # Assume format "ABCD1234.sfx"
             photo_number = int(photo_name[4:8])  # returns "1234"
             download = False
@@ -346,7 +355,7 @@ class PentaxWiFi:
                     #     self.pentaxwifi_play_beep()
                     # break
                 # DOWNLOAD NEW PHOTO(S)
-                if not self.download_photo(photoURL):
+                if not self.download_photo(photo_url):
                     # Failed. Retry later. Do not update k1base, do not pass Go.
                     break
                 if photo_number == 9999:
@@ -358,13 +367,14 @@ class PentaxWiFi:
                 self.update_k1_base_data()
 
     def test(self, testarg: str) -> None:
-        """
-        Get list of photos from PentaxWiFi. Parse into list of URLs to images.
+        """Get list of photos from PentaxWiFi. Parse into list of URLs to images.
+
         Returns:
             None
+
         """
         if testarg == "?":
-            print(
+            print(  # noqa: T201 -- yes we want PRINT
                 """
 "photos/path"
 "photos:path/info"
@@ -410,36 +420,38 @@ class PentaxWiFi:
 "changes"
 "apis"
  ?storage=sd{1,2}
-"""
+""",
             )
             return
 
         url = "http://" + self.ipaddr + "/v1/" + testarg
-        print("URL: " + url)
+        print("URL: " + url)  # noqa: T201
         # noinspection PyBroadException
         try:
-            r = requests.get(url)
-        except Exception:
+            r = requests.get(url)  # noqa: S113
+        except Exception:  # noqa: BLE001
             print_debug("error...")
-            return None
+            return
 
         if r.status_code == 200:
-            print("Result: \n")
-            print(r.content)
-            return None
-        print("Non-200 result")
+            print("Result: \n")  # noqa: T201
+            print(r.content)  # noqa: T201
+            return
+        print("Non-200 result")  # noqa: T201
         return
 
 
 def print_debug(args: str) -> None:
+    """Print debug message."""
     if DEBUG:
-        print("DEBUG: " + args)
+        print("DEBUG: " + args)  # noqa: T201
 
 
 # The 'type=str' in the parser.add_argument will cause IDE warnings.  Ignore them.
 # noinspection PyTypeChecker
-def main():
-    global DEBUG
+def main() -> None:
+    """Main, start here."""
+    global DEBUG  # noqa: PLW0603  # This rule is WRONG. BE EXPLICIT TO AVOID BUGS!
     parser = argparse.ArgumentParser(description="Get new files from PentaxWiFi")
     parser.add_argument(
         "-i",
@@ -462,9 +474,7 @@ def main():
         default=2,
         help="Time in second to re-check for new photos.",
     )
-    parser.add_argument(
-        "-s", "--sdcard", type=int, default=2, help="SDCard Slot. (1 | 2)"
-    )
+    parser.add_argument("-s", "--sdcard", type=int, default=2, help="SDCard Slot. (1 | 2)")
     parser.add_argument(
         "-g",
         "--getdng",
@@ -472,9 +482,7 @@ def main():
         default=False,
         help="Download DNG file instead of default JPEG.",
     )
-    parser.add_argument(
-        "-t", "--test", action="store_true", default=False, help="Start in test mode"
-    )
+    parser.add_argument("-t", "--test", action="store_true", default=False, help="Start in test mode")
     parser.add_argument(
         "--clean",
         help="Write a clean preferences file. All files will be downloaded from card.",
@@ -493,7 +501,8 @@ def main():
         testrun = True
 
     if args.sdcard not in [1, 2]:
-        raise ValueError("SDCard must be either 1 or 2")
+        msg = "SDCard must be either 1 or 2"
+        raise ValueError(msg) from None
 
     print_debug("Debug:     " + str(args.debug))
     print_debug("Clean:     " + str(args.clean))
