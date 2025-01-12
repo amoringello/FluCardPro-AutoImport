@@ -6,7 +6,8 @@ Licensing: Creative Commons.
 Use and modify as you wish, but I would appreciate attribution.
 Look me up under Anthony Moringello Photography if you wish to make any donation for my effort.
 
-Purpose:
+Purpose::
+
 Import any new files from K1 to a specified folder.
 
 Main intent to be used with LightRoom's Auto Import.
@@ -20,73 +21,88 @@ Special case when 9999 rolls over to 0000.
 You must choose a Dest Dir (-d flag) on first use.  After that, the same folder will be used
 without needing to specify the location.
 
-Database will retain:
-- initialization date in seconds
-- 'first' imported file
-- 'last' imported file
-- rollover flag
-- Destination AutoImport Dir
-This database file is created in:  '/Library/Preferences/com.PsychoticPsoftware.FluImport.json'
-See K1BASE_DIR and K1BASE_FILE to change specific to your OS requirements.
+Database will retain::
+
+    - initialization date in seconds
+    - 'first' imported file
+    - 'last' imported file
+    - rollover flag
+    - Destination AutoImport Dir
+    This database file is created in:  '/Library/Preferences/com.PsychoticPsoftware.FluImport.json'
+    See K1BASE_DIR and K1BASE_FILE to change specific to your OS requirements.
 
 Filenames are assumed to be four characters followed by four numbers. e.g. 'ABCD1234.jpg'.
-This program makes no assumption with regards to files being of type JPG or RAW format.
-Whatever is saved to the SD Card will be captured.
+By default, only .JPG files will be downloaded.  Use the '--getdng' flag to download raw images.
 
-The program will reset the database file on startup if it has been more than two days since the last
-file download occurred.  This makes sense in most cases, as the card will eventually roll over
-file numbers and we need a way to not get confused.
+The program will clean/reset the database file on startup if it has been more than two days since
+the last file download occurred.  This makes sense in most cases, as the card will eventually
+roll over file numbers and we need a way to not get confused.
 NOTE: This does mean that after two days, EVERY file on the card will be re-downloaded.
-It is a best practice to clean your card before any major use.
+It should be a best practice to clean your card before any major use.
+
+USAGE::
+
+    -h, --help:                     Show a help message and exit.
+    -i IPADDR, --ipaddr IPADDR:     The K1's internal WiFi Server IP Address
+    -d DESTDIR, --destdir DESTDIR:  Destination dir to place new photos. Will use prior location if not set.
+    -r REFRESH, --refresh REFRESH:  Time in seconds to re-check for new photos.
+    -s SDCARD, --sdcard SDCARD#:    SDCard Slot. (1 | 2)
+    -g, --getdng:                   Download DNG file instead of default JPEG. THIS WILL BE SLOW.
+    -t, --test:                     Start in test mode. Used to help reverse engineer and diagnose Rest functions.
+    --clean:                        Write a clean preferences file. All files will be downloaded from card.
+    --debug:                        Debug. Probably more of a verbose mode than debug.
 
 
-K1 REST API
-'/v1/photos/path'
-'/v1/photos:path/info'
-'/v1/photos/latest/info'
-'/v1/photos?storage=sd{1,2}'
-'/v1/photos/102_1026/_AMP9018.DNG?storage=sd1'
-'/v1/photos/102_1026/_AMP9018.JPG?storage=sd2'
-'/v1/props'
-'/v1/props/camera'
-'/v1/props/lens'
-'/v1/props/liveview'
-'/v1/props/device'
-'/v1/variables'
-'/v1/variables/camera'
-'/v1/variables/lens'
-'/v1/variables/liveview'
-'/v1/variables/device'
-'/v1/status'
-'/v1/status/camera'
-'/v1/status/lens'
-'/v1/status/liveview'
-'/v1/status/device'
-'/v1/params'
-'/v1/params/camera'
-'/v1/params/lens'
-'/v1/params/liveview'
-'/v1/params/device'
-'/v1/constants'
-'/v1/constants/camera'
-'/v1/constants/lens'
-'/v1/constants/liveview'
-'/v1/constants/device'
-'/v1/ping'
-'/v1/liveview'
-'/v1/params/camera'
-'/v1/params/device'
-'/v1/camera/shoot'
-'/v1/camera/shoot/start'
-'/v1/camera/shoot/finish'
-'/v1/lens/focus'
-'/v1/liveview/zoom'
-'/v1/changes'
-'/v1/apis'
 
-Add ?storage=sd{1,2}
-E.g. ?http://192.168.0.1/v1/photos?storage=sd2?
+NOTE K1 REST API::
+
+    '/v1/photos/path'
+    '/v1/photos:path/info'
+    '/v1/photos/latest/info'
+    '/v1/photos?storage=sd{1,2}'
+    '/v1/photos/102_1026/_AMP9018.DNG?storage=sd1'
+    '/v1/photos/102_1026/_AMP9018.JPG?storage=sd2'
+    '/v1/props'
+    '/v1/props/camera'
+    '/v1/props/lens'
+    '/v1/props/liveview'
+    '/v1/props/device'
+    '/v1/variables'
+    '/v1/variables/camera'
+    '/v1/variables/lens'
+    '/v1/variables/liveview'
+    '/v1/variables/device'
+    '/v1/status'
+    '/v1/status/camera'
+    '/v1/status/lens'
+    '/v1/status/liveview'
+    '/v1/status/device'
+    '/v1/params'
+    '/v1/params/camera'
+    '/v1/params/lens'
+    '/v1/params/liveview'
+    '/v1/params/device'
+    '/v1/constants'
+    '/v1/constants/camera'
+    '/v1/constants/lens'
+    '/v1/constants/liveview'
+    '/v1/constants/device'
+    '/v1/ping'
+    '/v1/liveview'
+    '/v1/params/camera'
+    '/v1/params/device'
+    '/v1/camera/shoot'
+    '/v1/camera/shoot/start'
+    '/v1/camera/shoot/finish'
+    '/v1/lens/focus'
+    '/v1/liveview/zoom'
+    '/v1/changes'
+    '/v1/apis'
+
+    Add ?storage=sd{1,2}
+    E.g. ?http://192.168.0.1/v1/photos?storage=sd2?
 """
+
 from __future__ import annotations
 
 import argparse
@@ -222,11 +238,11 @@ class PentaxWiFi:
             json.dump(self.k1base, outfile)
         os.chdir(cwd)
 
-    def get_photo_list(self) -> list[str] | None:
+    def get_photo_list(self) -> list[str]:
         """Get list of photos from PentaxWiFi. Parse into list of image URLs.
 
         Returns:
-            List of image URLs. None if connection failed.
+            list[str]: List of image URLs. None if connection failed.
 
         """
         url_photo_list = "http://" + self.ipaddr + "/v1/photos" + "?" + self.sdparam
@@ -236,24 +252,24 @@ class PentaxWiFi:
             r = requests.get(url_photo_list, timeout=(2, 5))
         except Timeout:
             print_debug("Connection timeout on PhotoList. Will re-try. ")
-            return None
+            return []
 
         if r.status_code != 200:
-            return None
-        photolist: list[str] | None = self.parse_photo_list_json(r)
+            return []
+        photolist: list[str] = self.parse_photo_list_json(r)
         return photolist
 
-    def parse_photo_list_json(self, content: requests.Response) -> list[str] | None:
+    def parse_photo_list_json(self, content: requests.Response) -> list[str]:
         """Parse JSON of Folder/Files list obtained from camera.
 
-                Create a simple list of full URL to image;
+        Create a simple list of full URL to image;
             http://{ipAddr}/v1/photos/{folder}/{photoName}
 
         Args:
             content (request.Response): content object from http request
 
         Returns:
-            (:obj:'list' of :obj:'str'): list of image URLs
+            list[str]: list of image URLs or None
 
         """
         photojson: dict[str, Any] = json.loads(content.text)
@@ -284,7 +300,7 @@ class PentaxWiFi:
             print_debug("Last photo seen: " + photo_name)
             return photolist
 
-        return None
+        return []
 
     def download_photo(self, photo_url: str) -> bool:
         """Download photo data from the card.
@@ -319,8 +335,8 @@ class PentaxWiFi:
             None
 
         """
-        photo_list: list[str] | None = self.get_photo_list()
-        if photo_list is None:
+        photo_list: list[str] = self.get_photo_list()
+        if not photo_list:
             return
         for photo_url in photo_list:
             if self.k1base["lastFile"] == "None":  # noqa: SIM108
@@ -458,7 +474,7 @@ def main() -> None:
         "--ipaddr",
         type=str,
         default="192.168.0.1",
-        help="K1 WiFi Server IP Address",
+        help="K1 internal WiFi Server IP Address",
     )
     parser.add_argument(
         "-d",
@@ -472,7 +488,7 @@ def main() -> None:
         "--refresh",
         type=int,
         default=2,
-        help="Time in second to re-check for new photos.",
+        help="Time in seconds to re-check for new photos.",
     )
     parser.add_argument("-s", "--sdcard", type=int, default=2, help="SDCard Slot. (1 | 2)")
     parser.add_argument(
@@ -480,7 +496,7 @@ def main() -> None:
         "--getdng",
         action="store_true",
         default=False,
-        help="Download DNG file instead of default JPEG.",
+        help="Download DNG file instead of default JPEG. THIS WILL BE SLOW.",
     )
     parser.add_argument("-t", "--test", action="store_true", default=False, help="Start in test mode")
     parser.add_argument(
