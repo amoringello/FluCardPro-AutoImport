@@ -4,10 +4,12 @@ IMPORTANT: Requires 'requests' module.
            This has been fixed in late 2024. Be sure to update your Python
            and modules to ensure the requests module is functional.
 
+See further important notes below.
 
 # fluImport.py
 Auto Import photos from the Ricoh FluCard Pro-1 card (any camera that supports the FluCard Pro-1).
-No longer being worked on since the card is no longer sold nor supported.
+
+This is no longer being worked on since the card is no longer sold nor supported.
 But should function well enough if you have one fo these cards.
 
 # k1Import.py
@@ -28,8 +30,28 @@ With that, there is room for improvement with how the latest unread photos might
 determined and the above issue might be avoidable.  But I have not found the need to 
 invest the time to research the alternatives.  
 
+IMPORTANT:
 
-If you like Python environments, you can do the following...
-$ pienv install
-$ pipenv run python3 k1import.py -d <full path to store files> 
+    Python module 'requests' is a required prerequisite.  
+    Python no longer likes you to install new modules to the system installation.
+    Use of Python Environments are strongly encouraged.
+
+A 'Pipfile' for use with pipenv has been included. Do the following::
+
+    $ pienv install
+    $ pipenv run python3 k1import.py -d <full path to store files> 
+
+NOTE::
+
+For newer OSX you may have better luck staying with the build-in Python version.
+e.g. Tahoe uses Python 3.9.  Therefore, do:
+$ pipenv --python 3.9 install
+
+I have had trouble with Homebrew installations of newer Python versions finding the necessary prerequisites. 
+Give them a try if you wish, it may just take some tweaking to get the new prerequisites working.  
+I have done it, but every new Python3 release has its own issues.
+If you don't have time to debug Python environments stick with the OS version.
+
+
+
 
